@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Account Data Verifier</title>
+<meta name="description" content="The account-data verifier checks the pull, not the business. What it checks, what reads it, and a proposal for Jacob.">
+<style>
+:root {
+  --bg: #F4F6F8; --paper: #FFFFFF; --ink: #18202B; --muted: #5B6675; --line: #D5DBE2;
+  --tool: #13756F; --tool-bg: #E3F2F0;
+  --judge: #4338A8; --judge-bg: #E9E7F8;
+  --drop: #7F8896; --drop-bg: #ECEEF1;
+  --warn: #9A5606; --warn-bg: #FBF0DF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161C; --paper: #181D25; --ink: #E7EBF0; --muted: #9AA5B3; --line: #2A323D;
+    --tool: #4FC1B8; --tool-bg: #15302E;
+    --judge: #A59CF5; --judge-bg: #232045;
+    --drop: #8C95A2; --drop-bg: #1F252D;
+    --warn: #E3A24A; --warn-bg: #33260F;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161C; --paper: #181D25; --ink: #E7EBF0; --muted: #9AA5B3; --line: #2A323D;
+  --tool: #4FC1B8; --tool-bg: #15302E;
+  --judge: #A59CF5; --judge-bg: #232045;
+  --drop: #8C95A2; --drop-bg: #1F252D;
+  --warn: #E3A24A; --warn-bg: #33260F;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px; line-height: 1.55; font-feature-settings: "tnum" 1;
+}
+main { max-width: 760px; margin: 0 auto; padding: 40px 16px 56px; }
+h1 { font-size: clamp(2rem, 6vw, 2.8rem); line-height: 1.04; letter-spacing: -0.025em; margin: 0 0 20px; font-weight: 750; }
+h1 span { display: block; }
+h1 .j { color: var(--judge); }
+h1 .t { color: var(--tool); }
+h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 36px 0 10px; line-height: 1.2; }
+p { margin: 0 0 14px; max-width: 68ch; }
+a { color: var(--judge); }
+a:focus-visible { outline: 3px solid var(--judge); outline-offset: 2px; }
+.lede { font-size: 1.12rem; }
+.from { color: var(--muted); font-size: 0.95rem; margin-bottom: 8px; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.86em; background: var(--drop-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.caution { background: var(--warn-bg); color: var(--ink); border-left: 4px solid var(--warn); padding: 14px 18px 4px; border-radius: 0 10px 10px 0; margin: 36px 0 0; }
+.caution h2 { color: var(--warn); margin: 0 0 8px; font-size: 1.2rem; }
+.note { color: var(--muted); font-size: 0.93rem; }
+
+/* The ten checks */
+.table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+th { font-weight: 650; color: var(--muted); font-size: 0.85rem; }
+tr:last-child td { border-bottom: 0; }
+td { line-height: 1.45; }
+td:nth-child(2) { font-weight: 600; width: 40%; }
+.n { width: 1%; padding-right: 0; color: var(--tool); font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Lists */
+.reads { list-style: none; padding: 0; margin: 12px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.reads li { background: var(--paper); border: 1px solid var(--line); border-top: 4px solid var(--tool); border-radius: 12px; padding: 11px 14px; font-size: 0.92rem; line-height: 1.45; }
+.reads li strong { display: block; margin-bottom: 2px; }
+.reads li code { display: block; width: fit-content; max-width: 100%; margin-top: 6px; font-size: 0.78rem; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 36px; }
+.pair h2 { margin: 0 0 8px; }
+.box { border-radius: 12px; padding: 16px 18px 6px; }
+.box.p { background: var(--judge-bg); } .box.p h2 { color: var(--judge); }
+.box.q { background: var(--paper); border: 1px solid var(--line); }
+.box .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 6px; }
+ol.plain { padding-left: 20px; margin: 0 0 10px; font-size: 0.95rem; }
+ol.plain li { margin: 0 0 8px; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 14px; }
+
+@media (max-width: 760px) {
+  .reads, .pair { grid-template-columns: 1fr; }
+  main { padding-top: 32px; }
+  td:nth-child(2) { width: auto; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1><span>The account-data verifier</span><span class="t">checks the pull,</span><span class="j">not the business.</span></h1>
+  <p class="lede">This follows <a href="https://digitalwillads.github.io/verifiers-vs-tools/">Verifiers judge the business, tools read the world</a>. It covers one verifier that checks only data reading. Its own tree calls it "the spec of the Rust pull." Here is what it checks, what reads it, and a proposal.</p>
+  <p class="from">From Will, written with Claude, October 16, 2026.</p>
+
+  <h2>What it checks</h2>
+  <p>Its purpose: "Every client's data is pulled every day, is complete and true, and is kept, so every manager and every check works from the real picture." For each day's snapshot, it asks:</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th class="n"><span class="sr">Number</span></th><th>The check</th><th>Why it matters</th></tr>
+      <tr><td class="n">1</td><td>Every live client is pulled today</td><td>A client left out gets no flags, so nobody looks at it.</td></tr>
+      <tr><td class="n">2</td><td>Fresh, or marked old with a reason</td><td>Old numbers shown as today's hide a problem.</td></tr>
+      <tr><td class="n">3</td><td>A failed read is a warning, never zero</td><td>A $0 from a failed read looks like a quiet day.</td></tr>
+      <tr><td class="n">4</td><td>Inside the shared API limit</td><td>15,000 Google Ads operations a day, shared with every push.</td></tr>
+      <tr><td class="n">5</td><td>The numbers match the platform</td><td>Same days, in the account's own time zone.</td></tr>
+      <tr><td class="n">6</td><td>No day is missing</td><td>A missing day can fake a spike or a drop.</td></tr>
+      <tr><td class="n">7</td><td>Only conversions the client counts</td><td>A page view as a lead makes cost per lead look good.</td></tr>
+      <tr><td class="n">8</td><td>"Unanswered" is really unanswered</td><td>Gmail labels decide it. A draft is never a message.</td></tr>
+      <tr><td class="n">9</td><td>A person's changes are seen</td><td>Also Editor changes, which the API change log misses.</td></tr>
+      <tr><td class="n">10</td><td>Each day's data is kept</td><td>An audit needs the data as it was that day.</td></tr>
+    </table>
+  </div>
+  <p class="note">Two more goals cover issues on live items only and the notebook's shape. A check that cannot run never passes.</p>
+
+  <h2>Why it is a tool check</h2>
+  <p>Will drew the line today: verifiers judge the business logic and the shape of an issue. They do not judge data reading or the AI's own functions. The pull is a tool. It is <code>act pull</code> (code in <code>data/src/pull/</code>), in Will's verifiers repo today, ported from the old desk pull. So these checks are really the pull's own tests. If the pull tests itself and marks bad data, we need no separate verifier.</p>
+
+  <h2>What reads it today</h2>
+  <ul class="reads">
+    <li><strong>The client story</strong>Reads its fails with six other verifiers. It runs it again when a fail is older than the client's last pull. <code>verify/<wbr>src/<wbr>client_story/</code></li>
+    <li><strong>The Manager</strong>Reads each client's snapshot from the pull. It expects the pull done by 7:15 AM. <code>verify/<wbr>src/<wbr>manager/<wbr>gather/<wbr>notebook_reads.rs</code></li>
+    <li><strong>The Verifier audit</strong>A fire drill removes one client's file from a day and expects this verifier to catch it. <code>cli/<wbr>src/<wbr>verifier_audit/<wbr>drills.rs</code></li>
+    <li><strong>Its own runs</strong>22 runs since Oct 15. No daily pull job runs now. Each client run pulls its own client. <code>state/<wbr>account-data/<wbr>runs</code></li>
+  </ul>
+
+  <div class="caution" role="note">
+    <h2>Caution: a false fail comes back</h2>
+    <p>Today, on Will's order, the concurrent-pulls fix (gate change <code>account-data-concurrent-pulls</code>) comes out of the verifiers. It fixed data reading, and that belongs in tools.</p>
+    <p>When two pulls run at once, they write one <code>pull.log</code>. Reads are then counted for the wrong run, and quota-safe fails by mistake. Real case: Trailer Jacks on Oct 15 and 16, 7 reads counted as 2. Barbara's client automations start together. KDX and Kogalla start at 7:00 AM. AAFE, KeyBar and Trailer Jacks start at 8:45 AM (as of Oct 16). On Oct 16, four pulls started within 31 seconds at 8:46 AM. So the next runs bring the false fail back.</p>
+  </div>
+
+  <div class="pair">
+    <section class="box p" aria-labelledby="prop">
+      <h2 id="prop">A proposal</h2>
+      <p class="sub">Will has not decided.</p>
+      <ol class="plain">
+        <li>Keep the verifier until its checks become the pull's own tests. Then retire it.</li>
+        <li>Give each pull run its own log.</li>
+        <li>Stagger the run start times, or make the pull safe to run in parallel.</li>
+      </ol>
+    </section>
+    <section class="box q" aria-labelledby="asks">
+      <h2 id="asks">Questions for you</h2>
+      <ol class="plain">
+        <li>Should the pull move into the Barbara and Chad tools, on your side? Or should it stay in the verifiers repo as a tool there?</li>
+        <li>Can the pull carry these checks as its own tests, and return a clear "could not read" state?</li>
+        <li>Who owns the fix for parallel pulls?</li>
+      </ol>
+    </section>
+  </div>
+
+  <footer>Sources: <code>verify/trees/account-data.toml</code>, the pull logs of Oct 15 and 16, <code>state/account-data/runs</code>, and the verifiers code. Times are Eastern.</footer>
+</main>
+</body>
+</html>
